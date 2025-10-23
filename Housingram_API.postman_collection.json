@@ -1,0 +1,1073 @@
+{
+	"info": {
+		"_postman_id": "housingram-api-collection",
+		"name": "Housingram Multi-Tenant API",
+		"description": "Complete API collection for Housingram multi-tenant property management system.\n\n## Setup Instructions:\n1. Import this collection into Postman\n2. Create an environment with variable `baseUrl` = `http://localhost:3000`\n3. Run migrations: `npm run setup`\n4. Start server: `npm start`\n5. Begin testing with Super Admin Login\n\n## Workflow:\n1. Login as Super Admin\n2. Create a tenant (auto-creates schema + admin user)\n3. Login as tenant admin\n4. Create projects, units, and users\n5. Test booking functionality\n6. View audit logs",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "01. Authentication",
+			"description": "Authentication endpoints for both Super Admin and Tenant users",
+			"item": [
+				{
+					"name": "Super Admin Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('superAdminToken', response.data.token);",
+									"    pm.environment.set('currentToken', response.data.token);",
+									"    console.log('Super Admin token saved!');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"superadmin@housingram.com\",\n  \"password\": \"SuperAdmin@123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/super-admin/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "super-admin", "login"]
+						},
+						"description": "Login as Super Admin. Default credentials are created by seed script.\n\n**Default Credentials:**\n- Email: superadmin@housingram.com\n- Password: SuperAdmin@123\n\n**Response:** JWT token saved to environment variable `superAdminToken`"
+					},
+					"response": []
+				},
+				{
+					"name": "Tenant User Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('tenantToken', response.data.token);",
+									"    pm.environment.set('currentToken', response.data.token);",
+									"    pm.environment.set('tenantSchema', response.data.tenant_schema);",
+									"    console.log('Tenant user token saved!');",
+									"    console.log('Schema:', response.data.tenant_schema);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@abcbuilders.com\",\n  \"password\": \"SecurePass123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "login"]
+						},
+						"description": "Login as tenant user (Admin, Sales, or Viewer).\n\n**Note:** Use the credentials from tenant creation.\n\n**Example:**\n- Email: admin@abcbuilders.com (created with tenant)\n- Password: SecurePass123 (set during tenant creation)\n\n**Response:** JWT token saved to `tenantToken` and tenant schema saved"
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('currentToken', response.data.token);",
+									"    console.log('Token refreshed!');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{currentToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/auth/refresh",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "auth", "refresh"]
+						},
+						"description": "Refresh authentication token. Requires valid JWT token.\n\n**Use Case:** When token is about to expire (24 hours)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "02. Super Admin - Tenant Management",
+			"description": "Super Admin endpoints for managing tenants (builders/developers)",
+			"item": [
+				{
+					"name": "Create Tenant",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('tenantId', response.data.id);",
+									"    pm.environment.set('tenantSchemaName', response.data.schema_name);",
+									"    console.log('Tenant created!');",
+									"    console.log('ID:', response.data.id);",
+									"    console.log('Schema:', response.data.schema_name);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{superAdminToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"ABC Builders\",\n  \"contact\": \"contact@abcbuilders.com\",\n  \"subscription_type\": \"Premium\",\n  \"adminName\": \"John Doe\",\n  \"adminEmail\": \"admin@abcbuilders.com\",\n  \"adminPassword\": \"SecurePass123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/super-admin/tenants",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "super-admin", "tenants"]
+						},
+						"description": "Create a new tenant (builder/developer).\n\n**What happens:**\n1. Creates tenant record in public.tenants\n2. Creates dedicated schema (e.g., tenant_1)\n3. Runs all tenant migrations\n4. Creates admin user in tenant schema\n\n**Required Fields:**\n- name: Tenant company name\n- contact: Contact email\n- subscription_type: \"Basic\" or \"Premium\"\n- adminName: Initial admin user's name\n- adminEmail: Initial admin user's email\n- adminPassword: Initial admin user's password\n\n**Access:** Super Admin only"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Tenants",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{superAdminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/super-admin/tenants?page=1&limit=10&activeOnly=true",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "super-admin", "tenants"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (default: 1)"
+								},
+								{
+									"key": "limit",
+									"value": "10",
+									"description": "Items per page (default: 10)"
+								},
+								{
+									"key": "activeOnly",
+									"value": "true",
+									"description": "Filter active tenants only"
+								}
+							]
+						},
+						"description": "Get all tenants with pagination.\n\n**Query Parameters:**\n- page: Page number\n- limit: Items per page\n- activeOnly: Filter active tenants (true/false)\n\n**Response:** Paginated list of tenants\n\n**Access:** Super Admin only"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Tenant by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{superAdminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/super-admin/tenants/{{tenantId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "super-admin", "tenants", "{{tenantId}}"]
+						},
+						"description": "Get specific tenant details by ID.\n\n**Access:** Super Admin only"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Tenant",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{superAdminToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"ABC Builders Ltd\",\n  \"subscription_type\": \"Basic\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/super-admin/tenants/{{tenantId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "super-admin", "tenants", "{{tenantId}}"]
+						},
+						"description": "Update tenant information.\n\n**Updatable Fields:**\n- name: Tenant name\n- contact: Contact email\n- subscription_type: \"Basic\" or \"Premium\"\n\n**Access:** Super Admin only"
+					},
+					"response": []
+				},
+				{
+					"name": "Activate Tenant",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{superAdminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/super-admin/tenants/{{tenantId}}/activate",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "super-admin", "tenants", "{{tenantId}}", "activate"]
+						},
+						"description": "Activate a deactivated tenant.\n\n**Effect:** Users of this tenant can login and access their data again.\n\n**Access:** Super Admin only"
+					},
+					"response": []
+				},
+				{
+					"name": "Deactivate Tenant",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{superAdminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/super-admin/tenants/{{tenantId}}/deactivate",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "super-admin", "tenants", "{{tenantId}}", "deactivate"]
+						},
+						"description": "Deactivate a tenant (suspend account).\n\n**Effect:** Users of this tenant will not be able to login.\n\n**Access:** Super Admin only"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Statistics",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{superAdminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/super-admin/stats",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "super-admin", "stats"]
+						},
+						"description": "Get aggregated statistics across all tenants.\n\n**Includes:**\n- Total tenants (active/inactive)\n- Total projects across all tenants\n- Total units (available/booked/sold)\n- Occupancy rate\n- Total revenue\n\n**Access:** Super Admin only"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "03. User Management",
+			"description": "Tenant-scoped user management (Admin, Sales, Viewer roles)",
+			"item": [
+				{
+					"name": "Create User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenantToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Jane Smith\",\n  \"email\": \"jane@abcbuilders.com\",\n  \"password\": \"SecurePass456\",\n  \"role\": \"Sales\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/users",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "users"]
+						},
+						"description": "Create a new user within the tenant.\n\n**Required Fields:**\n- name: User's full name\n- email: User's email (unique within tenant)\n- password: Password (min 8 characters)\n- role: \"Admin\", \"Sales\", or \"Viewer\"\n\n**Roles:**\n- Admin: Full access within tenant\n- Sales: Can view and book units\n- Viewer: Read-only access\n\n**Access:** Admin only\n\n**Audit:** Action logged automatically"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Users",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenantToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/users?page=1&limit=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "users"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Get all users in the tenant with pagination.\n\n**Access:** All authenticated users\n\n**Note:** Only shows users from the authenticated user's tenant"
+					},
+					"response": []
+				},
+				{
+					"name": "Get User by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenantToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/users/2",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "users", "2"]
+						},
+						"description": "Get specific user details by ID.\n\n**Access:** All authenticated users"
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenantToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Jane Doe\",\n  \"role\": \"Admin\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/users/2",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "users", "2"]
+						},
+						"description": "Update user information.\n\n**Updatable Fields:**\n- name: User's name\n- email: User's email\n- password: New password\n- role: User role\n- is_active: Active status\n\n**Access:** Admin only\n\n**Audit:** Action logged automatically"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenantToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/users/2",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "users", "2"]
+						},
+						"description": "Delete (soft delete) a user.\n\n**Note:** This is a soft delete - user is marked as inactive.\n\n**Access:** Admin only\n\n**Audit:** Action logged automatically"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "04. Project Management",
+			"description": "Manage property projects within tenant",
+			"item": [
+				{
+					"name": "Create Project",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('projectId', response.data.id);",
+									"    console.log('Project created! ID:', response.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenantToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Sunrise Apartments\",\n  \"location\": \"123 Main Street, Downtown City\",\n  \"description\": \"Luxury apartments in prime downtown location with modern amenities\",\n  \"total_units\": 50,\n  \"status\": \"Planning\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/projects",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "projects"]
+						},
+						"description": "Create a new property project.\n\n**Required Fields:**\n- name: Project name\n- location: Project address/location\n\n**Optional Fields:**\n- description: Project description\n- total_units: Total number of units\n- status: \"Planning\", \"Under Construction\", \"Completed\", \"On Hold\" (default: Planning)\n\n**Access:** Admin only\n\n**Audit:** Action logged with full project details"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Projects",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenantToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/projects?page=1&limit=10&status=Planning",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "projects"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "status",
+									"value": "Planning",
+									"description": "Filter by status"
+								}
+							]
+						},
+						"description": "Get all projects with pagination and filtering.\n\n**Query Parameters:**\n- page: Page number\n- limit: Items per page\n- status: Filter by status\n- activeOnly: Show only active projects\n\n**Access:** All authenticated users"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Project by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenantToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/projects/{{projectId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "projects", "{{projectId}}"]
+						},
+						"description": "Get specific project details by ID.\n\n**Access:** All authenticated users"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Project",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenantToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"Under Construction\",\n  \"total_units\": 52,\n  \"description\": \"Luxury apartments with pool and gym\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/projects/{{projectId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "projects", "{{projectId}}"]
+						},
+						"description": "Update project information.\n\n**Updatable Fields:**\n- name, location, description\n- total_units, status, is_active\n\n**Access:** Admin only\n\n**Audit:** Old and new values logged"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Project",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenantToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/projects/{{projectId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "projects", "{{projectId}}"]
+						},
+						"description": "Delete (soft delete) a project.\n\n**Access:** Admin only\n\n**Audit:** Action logged"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "05. Unit Management",
+			"description": "Manage property units with booking functionality",
+			"item": [
+				{
+					"name": "Create Unit",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('unitId', response.data.id);",
+									"    console.log('Unit created! ID:', response.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenantToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"project_id\": {{projectId}},\n  \"unit_number\": \"A-101\",\n  \"floor\": 1,\n  \"area\": 1200.50,\n  \"bedrooms\": 3,\n  \"bathrooms\": 2,\n  \"price\": 250000\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/units",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "units"]
+						},
+						"description": "Create a new unit within a project.\n\n**Required Fields:**\n- project_id: Parent project ID\n- unit_number: Unit identifier (e.g., A-101)\n- area: Unit area in sq ft/m\n- price: Unit price\n\n**Optional Fields:**\n- floor: Floor number\n- bedrooms: Number of bedrooms\n- bathrooms: Number of bathrooms\n\n**Initial Status:** Always \"Available\"\n\n**Access:** Admin only\n\n**Audit:** Action logged"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Units",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenantToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/units?page=1&limit=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "units"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Get all units with pagination.\n\n**Access:** All authenticated users"
+					},
+					"response": []
+				},
+				{
+					"name": "Filter Units - Available Only",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenantToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/units?status=Available&page=1&limit=20",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "units"],
+							"query": [
+								{
+									"key": "status",
+									"value": "Available",
+									"description": "Filter by status: Available, Booked, Sold"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Get available units only.\n\n**Filter by Status:**\n- Available: Units ready for booking\n- Booked: Units reserved but not sold\n- Sold: Units already sold"
+					},
+					"response": []
+				},
+				{
+					"name": "Filter Units - By Price Range",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenantToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/units?min_price=200000&max_price=300000&status=Available",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "units"],
+							"query": [
+								{
+									"key": "min_price",
+									"value": "200000",
+									"description": "Minimum price"
+								},
+								{
+									"key": "max_price",
+									"value": "300000",
+									"description": "Maximum price"
+								},
+								{
+									"key": "status",
+									"value": "Available"
+								}
+							]
+						},
+						"description": "Filter units by price range.\n\n**Use Case:** Find affordable units for clients"
+					},
+					"response": []
+				},
+				{
+					"name": "Filter Units - By Bedrooms & Project",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenantToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/units?project_id={{projectId}}&bedrooms=3&status=Available",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "units"],
+							"query": [
+								{
+									"key": "project_id",
+									"value": "{{projectId}}",
+									"description": "Filter by project"
+								},
+								{
+									"key": "bedrooms",
+									"value": "3",
+									"description": "Number of bedrooms"
+								},
+								{
+									"key": "status",
+									"value": "Available"
+								}
+							]
+						},
+						"description": "Advanced filtering: Find 3-bedroom units in specific project.\n\n**Available Filters:**\n- project_id: Specific project\n- status: Available/Booked/Sold\n- min_price, max_price: Price range\n- bedrooms: Number of bedrooms\n- activeOnly: Only active units"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Unit by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenantToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/units/{{unitId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "units", "{{unitId}}"]
+						},
+						"description": "Get specific unit details by ID.\n\n**Response includes:**\n- All unit details\n- Booking information (if booked)\n- Status history\n\n**Access:** All authenticated users"
+					},
+					"response": []
+				},
+				{
+					"name": "Book Unit",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenantToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/units/{{unitId}}/book",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "units", "{{unitId}}", "book"]
+						},
+						"description": "Book an available unit.\n\n**Business Logic:**\n- Only \"Available\" units can be booked\n- Status changes to \"Booked\"\n- User ID and timestamp recorded\n- Action is atomic (prevents double booking)\n\n**Access:** Admin and Sales roles\n\n**Audit:** BOOK action logged with old/new status\n\n**Use Case:** Sales person reserves unit for client"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Unit",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenantToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"price\": 260000,\n  \"floor\": 2\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/units/{{unitId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "units", "{{unitId}}"]
+						},
+						"description": "Update unit information.\n\n**Updatable Fields:**\n- unit_number, floor, area\n- bedrooms, bathrooms, price\n- is_active\n\n**Note:** Status cannot be updated directly (use booking endpoint)\n\n**Access:** Admin only\n\n**Audit:** Old and new values logged"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Unit",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenantToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/units/{{unitId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "units", "{{unitId}}"]
+						},
+						"description": "Delete (soft delete) a unit.\n\n**Access:** Admin only\n\n**Audit:** Action logged"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "06. Audit Logs",
+			"description": "View audit trail of all operations (Read-only)",
+			"item": [
+				{
+					"name": "Get All Audit Logs",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenantToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/audit-logs?page=1&limit=20",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "audit-logs"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Get all audit logs with pagination.\n\n**What's logged:**\n- All CREATE, UPDATE, DELETE operations\n- BOOK actions on units\n- User who performed action\n- Old and new values\n- Timestamp, IP, user agent\n\n**Access:** Admin, Sales, Viewer (read-only)\n\n**Use Case:** Compliance, tracking, debugging"
+					},
+					"response": []
+				},
+				{
+					"name": "Filter Logs - By Action",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenantToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/audit-logs?action=CREATE&page=1&limit=20",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "audit-logs"],
+							"query": [
+								{
+									"key": "action",
+									"value": "CREATE",
+									"description": "Actions: CREATE, UPDATE, DELETE, BOOK"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Filter audit logs by action type.\n\n**Action Types:**\n- CREATE: New records\n- UPDATE: Modified records\n- DELETE: Deleted records\n- BOOK: Unit bookings"
+					},
+					"response": []
+				},
+				{
+					"name": "Filter Logs - By Entity",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenantToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/audit-logs?entity=unit&action=BOOK",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "audit-logs"],
+							"query": [
+								{
+									"key": "entity",
+									"value": "unit",
+									"description": "Entity types: user, project, unit"
+								},
+								{
+									"key": "action",
+									"value": "BOOK"
+								}
+							]
+						},
+						"description": "View all unit booking activities.\n\n**Use Case:** Track booking history"
+					},
+					"response": []
+				},
+				{
+					"name": "Filter Logs - By User",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenantToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/audit-logs?user_id=2",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "audit-logs"],
+							"query": [
+								{
+									"key": "user_id",
+									"value": "2",
+									"description": "Filter by user ID"
+								}
+							]
+						},
+						"description": "View all actions performed by specific user.\n\n**Use Case:** User activity tracking"
+					},
+					"response": []
+				},
+				{
+					"name": "Filter Logs - By Date Range",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenantToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/audit-logs?start_date=2024-01-01&end_date=2024-12-31",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "audit-logs"],
+							"query": [
+								{
+									"key": "start_date",
+									"value": "2024-01-01"
+								},
+								{
+									"key": "end_date",
+									"value": "2024-12-31"
+								}
+							]
+						},
+						"description": "Filter audit logs by date range.\n\n**Use Case:** Monthly/quarterly reports"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Audit Log by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{tenantToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/audit-logs/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "audit-logs", "1"]
+						},
+						"description": "Get specific audit log entry by ID.\n\n**Response includes:**\n- Full details of the action\n- User information\n- Old and new values (JSONB)\n- IP and user agent"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "07. Health Check",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/health",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "health"]
+						},
+						"description": "Check if API is running.\n\n**Use Case:** Monitoring, uptime checks\n\n**No authentication required**"
+					},
+					"response": []
+				},
+				{
+					"name": "API Root",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/",
+							"host": ["{{baseUrl}}"],
+							"path": [""]
+						},
+						"description": "API root endpoint with basic info."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "string"
+		}
+	]
+}
+
