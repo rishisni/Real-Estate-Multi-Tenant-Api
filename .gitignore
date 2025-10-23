@@ -1,0 +1,93 @@
+# ===================================
+# Housingram Backend - .gitignore
+# ===================================
+
+# Dependencies
+node_modules/
+
+# Environment Variables (IMPORTANT - Contains Secrets!)
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary Files
+tmp/
+temp/
+*.tmp
+
+# Database Files
+*.db
+*.sqlite
+
+# Certificates & Keys (Security!)
+*.pem
+*.key
+*.cert
+ssl/
+
+# Build Output
+dist/
+build/
+
+# Test Coverage
+coverage/
+
+# Backup Files
+*.bak
+backup/
+
+# Docker
+docker-compose.override.yml
+
+# PDF Generation (temp files)
+COMBINED_DOCUMENTATION.md
+scripts/generate-pdf.js
+scripts/generate-interview-pdf.js
+
+# Interview Preparation Materials (personal/not for repo)
+INTERVIEW_PREPARATION_GUIDE.md
+Interview_Preparation_Guide.pdf
+INTERVIEW_PREP_SUMMARY.md
+
+# Temporary Summary Files
+FINAL_SUMMARY.md
+
+
+
+# ===================================
+# Project-Specific Files
+# ===================================
+
+# Scripts Output (if any)
+scripts/output/
+scripts/logs/
+
+# Temporary Utility Scripts (optional - uncomment if you have temp scripts)
+# scripts/fix-*.js
+# scripts/temp-*.js
+
+# ===================================
+# What's COMMITTED (Tracked in Git)
+# ===================================
+# ✅ Migrations (src/migrations/) - Team needs these!
+# ✅ Postman Collection - API documentation
+# ✅ Seed scripts - Database setup
+# ✅ .env.example - Configuration template
+# ✅ All source code (src/)
+# ✅ Documentation (README.md, etc.)
+
