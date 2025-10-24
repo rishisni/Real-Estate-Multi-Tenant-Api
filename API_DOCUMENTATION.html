@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Housingram API - Architecture & System Design Documentation</title>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default',
+            securityLevel: 'loose'
+        });
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Fira+Code&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.7;
+            color: #2d3748;
+            background: #ffffff;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 60px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 0.5rem;
+            border-bottom: 4px solid #4299e1;
+            padding-bottom: 1rem;
+        }
+        
+        h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-top: 3rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+        }
+        
+        h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #4a5568;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        h4 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #718096;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        p {
+            margin-bottom: 1rem;
+        }
+        
+        blockquote {
+            background: #edf2f7;
+            border-left: 4px solid #4299e1;
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 4px;
+        }
+        
+        code {
+            font-family: 'Fira Code', 'Courier New', monospace;
+            background: #f7fafc;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-size: 0.9em;
+            color: #e53e3e;
+        }
+        
+        pre {
+            background: #2d3748;
+            color: #f7fafc;
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            line-height: 1.5;
+        }
+        
+        pre code {
+            background: transparent;
+            color: inherit;
+            padding: 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        thead {
+            background: #4299e1;
+            color: white;
+        }
+        
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border: 1px solid #e2e8f0;
+        }
+        
+        tbody tr:nth-child(even) {
+            background: #f7fafc;
+        }
+        
+        tbody tr:hover {
+            background: #edf2f7;
+        }
+        
+        ul, ol {
+            margin: 1rem 0 1rem 2rem;
+        }
+        
+        li {
+            margin-bottom: 0.5rem;
+        }
+        
+        a {
+            color: #4299e1;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        hr {
+            border: none;
+            border-top: 2px solid #e2e8f0;
+            margin: 3rem 0;
+        }
+        
+        .mermaid {
+            background: #f7fafc;
+            padding: 2rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            overflow-x: auto;
+        }
+        
+        .header-note {
+            background: #ebf8ff;
+            border-left: 4px solid #3182ce;
+            padding: 1rem 1.5rem;
+            margin: 2rem 0;
+            border-radius: 4px;
+        }
+        
+        .toc {
+            background: #f7fafc;
+            padding: 2rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+        }
+        
+        .toc h2 {
+            margin-top: 0;
+            border: none;
+        }
+        
+        .toc ul {
+            list-style: none;
+            margin-left: 0;
+        }
+        
+        .toc li {
+            margin-bottom: 0.75rem;
+        }
+        
+        .toc a {
+            font-size: 1.1rem;
+        }
+        
+        .emoji {
+            font-style: normal;
+        }
+        
+        .tech-stack {
+            background: #2d3748;
+            color: #f7fafc;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Fira Code', monospace;
+            margin: 1.5rem 0;
+        }
+        
+        @media print {
+            body {
+                padding: 20px;
+                font-size: 11pt;
+            }
+            
+            h1 {
+                page-break-before: always;
+            }
+            
+            h1:first-of-type {
+                page-break-before: avoid;
+            }
+            
+            h2, h3 {
+                page-break-after: avoid;
+            }
+            
+            .mermaid {
+                page-break-inside: avoid;
+            }
+            
+            table {
+                page-break-inside: avoid;
+            }
+            
+            pre {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Housingram API - Architecture & System Design Documentation</h1>
+    
+    <div class="header-note">
+        <strong>Note:</strong> For detailed API endpoint documentation, request/response formats, and interactive testing, please visit the <a href="http://localhost:3000/api-docs">Swagger Documentation</a> (or <a href="https://real-estate-multi-tenant-api.onrender.com/api-docs">Production API Docs</a>).
+    </div>
+
+    <div class="toc">
+        <h2>Table of Contents</h2>
+        <ul>
+            <li><a href="#architecture-overview">Architecture Overview</a></li>
+            <li><a href="#multi-tenant-strategy">Multi-Tenant Strategy</a></li>
+            <li><a href="#database-schema">Database Schema</a></li>
+            <li><a href="#authentication-flow">Authentication Flow</a></li>
+            <li><a href="#request-processing-flow">Request Processing Flow</a></li>
+            <li><a href="#role-based-access-control">Role-Based Access Control</a></li>
+            <li><a href="#tenant-onboarding-flow">Tenant Onboarding Flow</a></li>
+            <li><a href="#quick-start-guide">Quick Start Guide</a></li>
+        </ul>
+    </div>
+
+    <hr>
+
+    <h2 id="architecture-overview">Architecture Overview</h2>
+    
+    <p>Housingram is a <strong>multi-tenant property management system</strong> designed for real estate builders/developers to manage their projects, units, and sales teams independently with complete data isolation.</p>
+
+    <h3>Key Design Principles</h3>
+    <ol>
+        <li><strong>Schema-per-Tenant Isolation</strong>: Each tenant (builder) gets a dedicated PostgreSQL schema</li>
+        <li><strong>Repository Pattern</strong>: Clean separation between data access and business logic</li>
+        <li><strong>DTO Pattern</strong>: Input validation and output transformation</li>
+        <li><strong>Middleware Chain</strong>: Layered security and request processing</li>
+        <li><strong>Audit Logging</strong>: Complete audit trail of all data mutations</li>
+    </ol>
+
+    <h3>Technology Stack</h3>
+    <div class="tech-stack">
+Runtime:             Node.js 18+
+Framework:           Express.js
+Database:            PostgreSQL 15+ (with Sequelize ORM)
+Authentication:      JWT (JSON Web Tokens)
+Security:            bcryptjs, RBAC middleware
+Validation:          Joi schemas
+Documentation:       Swagger/OpenAPI 3.0
+Logging:             Winston with daily rotation
+Migrations:          Umzug
+Containerization:    Docker & Docker Compose
+    </div>
+
+    <hr>
+
+    <h2 id="multi-tenant-strategy">Multi-Tenant Strategy</h2>
+    
+    <h3>Schema-per-Tenant Architecture</h3>
+    
+    <div class="mermaid">
+graph TB
+    subgraph "PostgreSQL Database"
+        subgraph "Public Schema"
+            T[tenants table]
+            SA[Super Admin users]
+        end
+        
+        subgraph "Tenant 1 Schema"
+            T1U[users]
+            T1P[projects]
+            T1UN[units]
+            T1A[audit_logs]
+        end
+        
+        subgraph "Tenant 2 Schema"
+            T2U[users]
+            T2P[projects]
+            T2UN[units]
+            T2A[audit_logs]
+        end
+        
+        subgraph "Tenant N Schema"
+            TNU[users]
+            TNP[projects]
+            TNUN[units]
+            TNA[audit_logs]
+        end
+    end
+    
+    T -->|references| T1U
+    T -->|references| T2U
+    T -->|references| TNU
+    
+    T1P -->|contains| T1UN
+    T2P -->|contains| T2UN
+    TNP -->|contains| TNUN
+    
+    style T fill:#ff9999
+    style SA fill:#ff9999
+    style T1U fill:#99ccff
+    style T2U fill:#99ff99
+    style TNU fill:#ffcc99
+    </div>
+
+    <h3>Why Schema-per-Tenant?</h3>
+    <ul>
+        <li>✅ <strong>Complete Data Isolation</strong>: No risk of cross-tenant data leaks</li>
+        <li>✅ <strong>Performance</strong>: Queries don't need tenant filters, indexes are smaller</li>
+        <li>✅ <strong>Flexibility</strong>: Each tenant can have custom schema modifications if needed</li>
+        <li>✅ <strong>Compliance</strong>: Easier to meet data residency and privacy requirements</li>
+        <li>✅ <strong>Backup & Restore</strong>: Can backup/restore individual tenant data</li>
+    </ul>
+
+    <hr>
+
+    <h2 id="database-schema">Database Schema</h2>
+    
+    <h3>Public Schema</h3>
+    <p>The public schema stores tenant metadata and Super Admin users.</p>
+    
+    <div class="mermaid">
+erDiagram
+    TENANTS {
+        int id PK
+        string name
+        string contact
+        enum subscription_type "Basic, Premium"
+        string schema_name UK "e.g., tenant_1"
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    SUPER_ADMIN_USERS {
+        int id PK
+        string name
+        string email UK
+        string password_hash
+        enum role "Super Admin"
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+    </div>
+
+    <h3>Tenant Schema</h3>
+    <p>Each tenant has an isolated schema with the following structure:</p>
+    
+    <div class="mermaid">
+erDiagram
+    USERS {
+        int id PK
+        int tenant_id FK
+        string name
+        string email UK
+        string password_hash
+        enum role "Admin, Sales, Viewer"
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    PROJECTS {
+        int id PK
+        int tenant_id FK
+        string name
+        string location
+        text description
+        int total_units
+        enum status "Planning, Under Construction, Completed, On Hold"
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    UNITS {
+        int id PK
+        int project_id FK
+        string unit_number
+        int floor
+        decimal area
+        int bedrooms
+        int bathrooms
+        decimal price
+        enum status "Available, Booked, Sold"
+        int booked_by FK
+        timestamp booked_at
+        timestamp sold_at
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    AUDIT_LOGS {
+        int id PK
+        int user_id FK
+        string action "CREATE, UPDATE, DELETE"
+        string entity_type "user, project, unit"
+        int entity_id
+        json changes
+        timestamp created_at
+    }
+    
+    PROJECTS ||--o{ UNITS : "contains"
+    USERS ||--o{ UNITS : "books"
+    USERS ||--o{ AUDIT_LOGS : "performs"
+    </div>
+
+    <h3>Key Relationships</h3>
+    <ul>
+        <li><strong>Projects → Units</strong>: One-to-Many (CASCADE on delete)</li>
+        <li><strong>Users → Units</strong>: One-to-Many (for bookings)</li>
+        <li><strong>Users → Audit Logs</strong>: One-to-Many (tracking actions)</li>
+    </ul>
+
+    <hr>
+
+    <h2 id="authentication-flow">Authentication Flow</h2>
+    
+    <h3>Two Separate Authentication Paths</h3>
+    
+    <div class="mermaid">
+sequenceDiagram
+    participant C as Client
+    participant API as API Server
+    participant PUB as Public Schema
+    participant TNT as Tenant Schema
+    
+    Note over C,TNT: Super Admin Authentication
+    C->>API: POST /v1/auth/super-admin/login<br/>{email, password}
+    API->>PUB: Query public.users WHERE role='Super Admin'
+    PUB-->>API: Super Admin User
+    API->>API: Verify password + Generate JWT
+    API-->>C: {token, user}<br/>Token contains: {userId, role, isSuperAdmin}
+    
+    Note over C,TNT: Tenant User Authentication
+    C->>API: POST /v1/auth/login<br/>{email, password}
+    API->>PUB: Find tenant by user email
+    PUB-->>API: tenant_id, schema_name
+    API->>TNT: Query {schema_name}.users WHERE email
+    TNT-->>API: Tenant User
+    API->>API: Verify password + Generate JWT
+    API-->>C: {token, user}<br/>Token contains: {userId, role, tenantId, tenantSchema}
+    </div>
+
+    <h3>JWT Token Structure</h3>
+    
+    <p><strong>Super Admin Token:</strong></p>
+    <pre><code>{
+  "userId": 1,
+  "email": "superadmin@housingram.com",
+  "role": "Super Admin",
+  "isSuperAdmin": true,
+  "iat": 1234567890,
+  "exp": 1234654290
+}</code></pre>
+
+    <p><strong>Tenant User Token:</strong></p>
+    <pre><code>{
+  "userId": 5,
+  "email": "admin@acmebuilders.com",
+  "role": "Admin",
+  "tenantId": 1,
+  "tenantSchema": "tenant_1",
+  "iat": 1234567890,
+  "exp": 1234654290
+}</code></pre>
+
+    <hr>
+
+    <h2 id="request-processing-flow">Request Processing Flow</h2>
+    
+    <h3>Complete Request Lifecycle</h3>
+    
+    <div class="mermaid">
+flowchart TD
+    Start([HTTP Request]) --> Auth{Auth Middleware<br/>authenticateToken}
+    Auth -->|No Token| Reject1[401 Unauthorized]
+    Auth -->|Invalid Token| Reject1
+    Auth -->|Valid Token| ReqType{Request Type?}
+    
+    ReqType -->|Super Admin| SAPath[Use Public Schema]
+    ReqType -->|Tenant User| TResolver[Tenant Resolver<br/>Middleware]
+    
+    TResolver --> SetSchema[Set search_path to<br/>tenant schema]
+    SetSchema --> RBAC
+    SAPath --> RBAC{RBAC Middleware<br/>checkPermission}
+    
+    RBAC -->|Insufficient<br/>Permissions| Reject2[403 Forbidden]
+    RBAC -->|Authorized| Validate{Validation<br/>Middleware}
+    
+    Validate -->|Invalid Data| Reject3[400 Bad Request]
+    Validate -->|Valid Data| Controller[Controller<br/>Business Logic]
+    
+    Controller --> Service[Service Layer]
+    Service --> Repo[Repository Layer]
+    Repo --> DB[(PostgreSQL<br/>Appropriate Schema)]
+    
+    DB --> Repo
+    Repo --> Service
+    Service --> Controller
+    Controller --> Audit{Mutation Operation?}
+    
+    Audit -->|Yes| AuditLog[Audit Log Middleware<br/>Record action]
+    Audit -->|No| Response
+    AuditLog --> Response[Success Response<br/>200/201]
+    
+    Response --> End([HTTP Response])
+    Reject1 --> End
+    Reject2 --> End
+    Reject3 --> End
+    
+    style Auth fill:#e1f5ff
+    style RBAC fill:#fff4e1
+    style Validate fill:#f0e1ff
+    style Audit fill:#e1ffe8
+    style Response fill:#e8ffe1
+    </div>
+
+    <h3>Middleware Chain Details</h3>
+    <ol>
+        <li><strong>Authentication Middleware</strong> (<code>auth.js</code>)
+            <ul>
+                <li>Verifies JWT token from Authorization header</li>
+                <li>Decodes user information and attaches to <code>req.user</code></li>
+                <li>Rejects invalid/expired tokens</li>
+            </ul>
+        </li>
+        <li><strong>Tenant Resolver Middleware</strong> (<code>tenantResolver.js</code>)
+            <ul>
+                <li>Extracts tenant schema from JWT token</li>
+                <li>Sets PostgreSQL <code>search_path</code> to tenant schema</li>
+                <li>Ensures queries execute in correct schema</li>
+            </ul>
+        </li>
+        <li><strong>RBAC Middleware</strong> (<code>rbac.js</code>)
+            <ul>
+                <li>Checks if user role has permission for the resource/action</li>
+                <li>Uses permission matrix defined in <code>config/roles.js</code></li>
+                <li>Returns 403 if unauthorized</li>
+            </ul>
+        </li>
+        <li><strong>Validation Middleware</strong> (<code>validate.js</code>)
+            <ul>
+                <li>Validates request body, params, and query using Joi schemas</li>
+                <li>Returns detailed validation errors</li>
+                <li>Prevents malformed data from reaching controllers</li>
+            </ul>
+        </li>
+        <li><strong>Audit Logger Middleware</strong> (<code>auditLogger.js</code>)
+            <ul>
+                <li>Records all CREATE, UPDATE, DELETE operations</li>
+                <li>Captures user context, action type, entity, and changes</li>
+                <li>Stores in <code>{tenant_schema}.audit_logs</code></li>
+            </ul>
+        </li>
+    </ol>
+
+    <hr>
+
+    <h2 id="role-based-access-control">Role-Based Access Control</h2>
+    
+    <h3>User Roles & Permissions Matrix</h3>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Resource</th>
+                <th>Action</th>
+                <th>Super Admin</th>
+                <th>Tenant Admin</th>
+                <th>Sales</th>
+                <th>Viewer</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td><strong>Tenants</strong></td><td>Create</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
+            <tr><td><strong>Tenants</strong></td><td>Read</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
+            <tr><td><strong>Tenants</strong></td><td>Update</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
+            <tr><td><strong>Tenants</strong></td><td>Activate/Deactivate</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
+            <tr><td><strong>Users</strong></td><td>Create</td><td>❌</td><td>✅</td><td>❌</td><td>❌</td></tr>
+            <tr><td><strong>Users</strong></td><td>Read</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+            <tr><td><strong>Users</strong></td><td>Update</td><td>❌</td><td>✅</td><td>❌</td><td>❌</td></tr>
+            <tr><td><strong>Users</strong></td><td>Delete</td><td>❌</td><td>✅</td><td>❌</td><td>❌</td></tr>
+            <tr><td><strong>Projects</strong></td><td>Create</td><td>❌</td><td>✅</td><td>❌</td><td>❌</td></tr>
+            <tr><td><strong>Projects</strong></td><td>Read</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+            <tr><td><strong>Projects</strong></td><td>Update</td><td>❌</td><td>✅</td><td>❌</td><td>❌</td></tr>
+            <tr><td><strong>Projects</strong></td><td>Delete</td><td>❌</td><td>✅</td><td>❌</td><td>❌</td></tr>
+            <tr><td><strong>Units</strong></td><td>Create</td><td>❌</td><td>✅</td><td>❌</td><td>❌</td></tr>
+            <tr><td><strong>Units</strong></td><td>Read</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+            <tr><td><strong>Units</strong></td><td>Update</td><td>❌</td><td>✅</td><td>❌</td><td>❌</td></tr>
+            <tr><td><strong>Units</strong></td><td>Book</td><td>❌</td><td>✅</td><td>✅</td><td>❌</td></tr>
+            <tr><td><strong>Units</strong></td><td>Delete</td><td>❌</td><td>✅</td><td>❌</td><td>❌</td></tr>
+            <tr><td><strong>Audit Logs</strong></td><td>Read</td><td>❌</td><td>✅</td><td>✅</td><td>❌</td></tr>
+        </tbody>
+    </table>
+
+    <h3>Role Descriptions</h3>
+    
+    <h4>🔴 Super Admin (Public Schema)</h4>
+    <ul>
+        <li>Platform administrator</li>
+        <li>Onboards new tenants (builders)</li>
+        <li>Views cross-tenant statistics</li>
+        <li>Activates/deactivates tenant accounts</li>
+        <li><strong>Cannot</strong> access tenant-specific data</li>
+    </ul>
+
+    <h4>🔵 Admin (Tenant Schema)</h4>
+    <ul>
+        <li>Full control within their tenant</li>
+        <li>Manages users (Sales, Viewers)</li>
+        <li>CRUD operations on projects and units</li>
+        <li>Views audit logs</li>
+        <li>Assigns units to sales team</li>
+    </ul>
+
+    <h4>🟢 Sales (Tenant Schema)</h4>
+    <ul>
+        <li>Views all projects and units</li>
+        <li>Books available units</li>
+        <li>Views audit logs</li>
+        <li><strong>Cannot</strong> create/modify projects or users</li>
+    </ul>
+
+    <h4>🟡 Viewer (Tenant Schema)</h4>
+    <ul>
+        <li>Read-only access to projects and units</li>
+        <li>Cannot perform any mutations</li>
+        <li>Useful for stakeholders, investors, etc.</li>
+    </ul>
+
+    <hr>
+
+    <h2 id="tenant-onboarding-flow">Tenant Onboarding Flow</h2>
+    
+    <h3>Creating a New Tenant (Builder)</h3>
+    
+    <div class="mermaid">
+sequenceDiagram
+    participant SA as Super Admin
+    participant API as API Server
+    participant PUB as Public Schema
+    participant DB as PostgreSQL
+    participant TNT as Tenant Schema
+    
+    SA->>API: POST /v1/super-admin/tenants<br/>{name, contact, admin details}
+    API->>API: Validate tenant data
+    
+    API->>PUB: INSERT INTO public.tenants
+    PUB-->>API: tenant_id, schema_name (e.g., tenant_3)
+    
+    API->>DB: CREATE SCHEMA tenant_3
+    DB-->>API: Schema created
+    
+    API->>DB: Run tenant migrations on tenant_3
+    Note over API,DB: Creates users, projects,<br/>units, audit_logs tables
+    DB-->>API: Tables created
+    
+    API->>TNT: INSERT INTO tenant_3.users<br/>{admin details, role='Admin'}
+    TNT-->>API: Admin user created
+    
+    API->>PUB: UPDATE tenants SET is_active=true
+    API-->>SA: Success Response<br/>{tenant, admin_credentials}
+    
+    Note over SA: Admin can now login with<br/>provided credentials
+    </div>
+
+    <h3>Automatic Schema Provisioning</h3>
+    <p>When a new tenant is created:</p>
+    <ol>
+        <li>Record inserted in <code>public.tenants</code> table</li>
+        <li>New PostgreSQL schema created (e.g., <code>tenant_3</code>)</li>
+        <li>All tenant migrations executed on new schema</li>
+        <li>Admin user created in tenant schema</li>
+        <li>Credentials returned to Super Admin</li>
+    </ol>
+
+    <hr>
+
+    <h2 id="quick-start-guide">Quick Start Guide</h2>
+    
+    <h3>Prerequisites</h3>
+    <ul>
+        <li>Docker & Docker Compose (recommended)</li>
+        <li>OR Node.js 18+ and PostgreSQL 15+</li>
+    </ul>
+
+    <h3>Setup in 3 Steps</h3>
+    
+    <p><strong>1. Start the Application</strong></p>
+    <pre><code>docker-compose up -d</code></pre>
+
+    <p><strong>2. Run Migrations & Seed Data</strong></p>
+    <pre><code>docker-compose exec app npm run migrate:public
+docker-compose exec app npm run seed:super-admin</code></pre>
+
+    <p><strong>3. Access the Application</strong></p>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Service</th>
+                <th>URL</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>API</td><td><a href="http://localhost:3000">http://localhost:3000</a></td></tr>
+            <tr><td><strong>Swagger API Docs</strong></td><td><a href="http://localhost:3000/api-docs">http://localhost:3000/api-docs</a></td></tr>
+            <tr><td>Production API</td><td><a href="https://real-estate-multi-tenant-api.onrender.com">https://real-estate-multi-tenant-api.onrender.com</a></td></tr>
+            <tr><td>Production Docs</td><td><a href="https://real-estate-multi-tenant-api.onrender.com/api-docs">https://real-estate-multi-tenant-api.onrender.com/api-docs</a></td></tr>
+        </tbody>
+    </table>
+
+    <h3>Default Super Admin Credentials</h3>
+    <p>For development/testing:</p>
+    <ul>
+        <li><strong>Email:</strong> <code>superadmin@housingram.com</code></li>
+        <li><strong>Password:</strong> <code>SuperAdmin@123</code></li>
+    </ul>
+    <blockquote>
+        <strong>⚠️ Change these credentials immediately in production!</strong>
+    </blockquote>
+
+    <h3>Testing Workflow Example</h3>
+    
+    <div class="mermaid">
+flowchart LR
+    A[1. Login as<br/>Super Admin] --> B[2. Create<br/>Tenant]
+    B --> C[3. Login as<br/>Tenant Admin]
+    C --> D[4. Create<br/>Project]
+    D --> E[5. Create<br/>Units]
+    E --> F[6. Create<br/>Sales User]
+    F --> G[7. Login as<br/>Sales]
+    G --> H[8. Book<br/>Unit]
+    H --> I[9. View<br/>Audit Logs]
+    
+    style A fill:#ff9999
+    style C fill:#99ccff
+    style G fill:#99ff99
+    </div>
+
+    <h3>Step-by-Step Testing</h3>
+    <ol>
+        <li><strong>Login as Super Admin</strong> → Use default credentials</li>
+        <li><strong>Create Tenant</strong> → POST <code>/v1/super-admin/tenants</code></li>
+        <li><strong>Login as Tenant Admin</strong> → Use credentials returned in step 2</li>
+        <li><strong>Create Project</strong> → POST <code>/v1/projects</code></li>
+        <li><strong>Create Units</strong> → POST <code>/v1/units</code> (link to project)</li>
+        <li><strong>Create Sales User</strong> → POST <code>/v1/users</code> with role "Sales"</li>
+        <li><strong>Login as Sales User</strong> → GET sales user token</li>
+        <li><strong>Book a Unit</strong> → POST <code>/v1/units/:id/book</code></li>
+        <li><strong>View Audit Logs</strong> → GET <code>/v1/audit-logs</code></li>
+    </ol>
+    
+    <blockquote>
+        <strong>💡 Tip:</strong> Use <a href="http://localhost:3000/api-docs">Swagger UI</a> for interactive testing with pre-filled examples!
+    </blockquote>
+
+    <hr>
+
+    <h2>Additional Documentation</h2>
+    <ul>
+        <li><a href="./README.md">README.md</a> - Setup, installation, and getting started</li>
+        <li><a href="http://localhost:3000/api-docs">Swagger API Docs</a> - Interactive API reference</li>
+        <li><a href="./DEPLOYMENT.md">DEPLOYMENT.md</a> - Production deployment guide</li>
+        <li><a href="./LOGGING_GUIDE.md">LOGGING_GUIDE.md</a> - Winston logging configuration</li>
+        <li><a href="./POSTMAN_TESTING_GUIDE.md">POSTMAN_TESTING_GUIDE.md</a> - Postman collection usage</li>
+    </ul>
+
+    <hr>
+
+    <h2>Security Features</h2>
+    <ul>
+        <li>✅ JWT-based stateless authentication</li>
+        <li>✅ Bcrypt password hashing (10 salt rounds)</li>
+        <li>✅ Role-based access control (RBAC)</li>
+        <li>✅ Schema-level data isolation</li>
+        <li>✅ Comprehensive audit logging</li>
+        <li>✅ Input validation (Joi schemas)</li>
+        <li>✅ SQL injection protection (parameterized queries)</li>
+        <li>✅ Token expiration and refresh mechanism</li>
+    </ul>
+
+    <hr>
+    
+    <div style="text-align: center; color: #718096; padding: 2rem 0;">
+        <p><strong>Built with ❤️ for Real Estate Builders & Developers</strong></p>
+        <p style="font-size: 0.9rem;">Generated on: <?php echo date('Y-m-d H:i:s'); ?></p>
+    </div>
+
+</body>
+</html>
+

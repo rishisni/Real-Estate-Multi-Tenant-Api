@@ -37,6 +37,48 @@ v1Router.use('/', userRoutes);
 
 // Super Admin routes
 v1Router.use('/super-admin/tenants', tenantRoutes);
+
+/**
+ * @swagger
+ * /v1/super-admin/stats:
+ *   get:
+ *     summary: Get Platform Statistics
+ *     description: Retrieve aggregated statistics across all tenants including total tenants, users, projects, and units (Super Admin only)
+ *     tags: [Super Admin - Statistics]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Statistics retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     totalTenants:
+ *                       type: integer
+ *                       example: 15
+ *                     activeTenants:
+ *                       type: integer
+ *                       example: 12
+ *                     totalUsers:
+ *                       type: integer
+ *                       example: 145
+ *                     totalProjects:
+ *                       type: integer
+ *                       example: 48
+ *                     totalUnits:
+ *                       type: integer
+ *                       example: 1250
+ *       403:
+ *         description: Forbidden - Super Admin only
+ */
 v1Router.get(
     '/super-admin/stats',
     authenticateToken,

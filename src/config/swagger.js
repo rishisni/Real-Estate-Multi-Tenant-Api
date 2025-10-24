@@ -35,7 +35,7 @@ const options = {
         }
       },
       {
-        url: 'https://api.housingram.com/api',
+        url: 'https://real-estate-multi-tenant-api.onrender.com/api',
         description: 'Production Server'
       }
     ],
@@ -283,31 +283,31 @@ const options = {
     tags: [
       {
         name: 'Authentication',
-        description: 'User authentication endpoints (Super Admin & Tenant users)'
+        description: 'User authentication endpoints (Super Admin & Tenant users). Start here to get your JWT token!'
       },
       {
-        name: 'Tenants',
-        description: 'Tenant management (Super Admin only)'
+        name: 'Super Admin - Tenants',
+        description: 'Tenant management (Super Admin only) - Create and manage builder accounts'
+      },
+      {
+        name: 'Super Admin - Statistics',
+        description: 'Super Admin statistics and analytics across all tenants'
       },
       {
         name: 'Users',
-        description: 'User management within tenant'
+        description: 'User management within tenant (Admin, Sales, Viewer)'
       },
       {
         name: 'Projects',
-        description: 'Project management within tenant'
+        description: 'Property project management within tenant'
       },
       {
         name: 'Units',
-        description: 'Unit management and booking within tenant'
+        description: 'Unit management and booking within tenant projects'
       },
       {
         name: 'Audit Logs',
-        description: 'View audit trail of actions'
-      },
-      {
-        name: 'Statistics',
-        description: 'Super Admin statistics across all tenants'
+        description: 'View audit trail of all actions and changes'
       }
     ]
   },

@@ -45,7 +45,10 @@ sequelize.authenticate()
 // Swagger API Documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
     customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'Housingram API Docs'
+    customSiteTitle: 'Housingram API Docs',
+    swaggerOptions: {
+        persistAuthorization: true
+    }
 }));
 
 // API Routes

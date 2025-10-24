@@ -24,7 +24,14 @@ const { auditLog, captureOldValues } = require('../../middleware/auditLogger');
  * /v1/auth/super-admin/login:
  *   post:
  *     summary: Super Admin Login
- *     description: Authenticate as a Super Admin to manage tenants
+ *     description: |
+ *       Authenticate as a Super Admin to manage tenants.
+ *       
+ *       **Default SuperAdmin Credentials:**
+ *       - Email: `superadmin@housingram.com`
+ *       - Password: `SuperAdmin@123`
+ *       
+ *       After successful login, copy the returned token and use the "Authorize" button at the top to authenticate subsequent requests.
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -39,11 +46,13 @@ const { auditLog, captureOldValues } = require('../../middleware/auditLogger');
  *               email:
  *                 type: string
  *                 format: email
+ *                 default: superadmin@housingram.com
  *                 example: superadmin@housingram.com
  *               password:
  *                 type: string
  *                 format: password
- *                 example: SuperSecure@123
+ *                 default: SuperAdmin@123
+ *                 example: SuperAdmin@123
  *     responses:
  *       200:
  *         description: Login successful
@@ -84,7 +93,12 @@ router.post(
  * /v1/auth/login:
  *   post:
  *     summary: Tenant User Login
- *     description: Authenticate as a tenant user (Admin, Sales, or Viewer)
+ *     description: |
+ *       Authenticate as a tenant user (Admin, Sales, or Viewer).
+ *       
+ *       **Note:** You need to create a tenant first using Super Admin credentials, which will provide you with tenant admin credentials.
+ *       
+ *       After successful login, copy the returned token and use the "Authorize" button at the top to authenticate subsequent requests.
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
